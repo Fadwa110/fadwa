@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تقويم إيقاف كريم اكرتين تدريجياً</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#ffffff; --muted:#6b7280; --accent:#5b21b6; --success:#16a34a; --glass:rgba(255,255,255,0.6);
+      --primary: #4a6fa5; --secondary: #6b8cbc; --warning: #f59e0b;
+    }
+    [data-theme="dark"]{
+      --bg:#0b1220; --card:#071025; --muted:#93a3b8; --accent:#8b5cf6; --success:#34d399; --glass:rgba(255,255,255,0.04);
+      --primary: #6b8cbc; --secondary: #4a6fa5; --warning: #d97706;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{font-family: 'Segoe UI', Tahoma, system-ui, Arial; margin:0; background:var(--bg); color:inherit; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; transition: background 0.3s ease, color 0.3s ease;}
+
+    .wrap{max-width:980px;margin:28px auto;padding:20px}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+
+    .controls{display:flex;gap:10px;align-items:center}
+    .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(11,17,34,0.08); transition: all 0.2s ease;}
+    .btn:hover{transform: translateY(-2px); box-shadow: 0 8px 20px rgba(11,17,34,0.12);}
+    .ghost{background:transparent;color:var(--muted);border:1px solid rgba(0,0,0,0.06);padding:6px 10px;border-radius:9px}
+
+    .grid{display:grid;grid-template-columns:1fr;gap:18px}
+    @media(min-width:900px){.grid{grid-template-columns:1fr 360px}}
+
+    .card{background:linear-gradient(180deg, var(--card), var(--glass));padding:14px;border-radius:14px;box-shadow:0 6px 20px rgba(2,6,23,0.06); transition: transform 0.3s ease, box-shadow 0.3s ease;}
+    .card:hover{transform: translateY(-5px); box-shadow: 0 10px 25px rgba(2,6,23,0.1);}
+
+    .phase-title{font-weight:700;margin-bottom:10px}
+    .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+    .day{padding:10px;border-radius:10px;background:rgba(0,0,0,0.03);text-align:center;font-size:13px;cursor:pointer;user-select:none;position:relative;min-height:70px;display:flex;flex-direction:column;justify-content:center; transition: all 0.2s ease;}
+    .day.off{opacity:0.65}
+    .day.on{background:linear-gradient(90deg,var(--accent),#4c1d95);color:#fff}
+    .day.checked{background:linear-gradient(90deg,#10b981,#059669);color:#fff;text-decoration:line-through}
+    .day small{display:block;font-size:11px;color:var(--muted);margin-top:6px}
+    .day:hover{transform: scale(1.05);}
+
+    .legend{display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:10px}
+    .legend span{display:inline-flex;align-items:center;gap:6px}
+    .dot{width:12px;height:12px;border-radius:4px}
+    .dot.on{background:linear-gradient(90deg,var(--accent),#4c1d95)}
+    .dot.off{background:#d1d5db}
+    .dot.done{background:var(--success)}
+
+    .tips h3{margin:0 0 10px 0}
+    .tips ul{margin:0;padding-inline-start:18px;color:var(--muted)}
+
+    .footer{margin-top:16px;font-size:13px;color:var(--muted);text-align:center}
+
+    .save-indicator{font-size:12px;color:var(--muted);margin-left:8px}
+
+    .day .day-index{position:absolute;top:8px;left:8px;font-size:11px;color:rgba(255,255,255,0.8)}
+
+    .controls .switch{display:inline-flex;align-items:center;gap:8px;background:transparent;border-radius:999px;padding:6px}
+    .switch input{Display:none}
+    .toggle{width:44px;height:26px;background:#d1d5db;border-radius:999px;position:relative}
+    .toggle::after{content:'';width:18px;height:18px;background:white;border-radius:50%;position:absolute;top:4px;left:4px;transition:all .2s}
+    .switch input:checked + .toggle{background:linear-gradient(90deg,var(--accent),#7c3aed)}
+    .switch input:checked + .toggle::after{transform:translateX(18px)}
+
+    .stage-row{display:flex;gap:10px;align-items:center;flex-direction:row;flex-wrap:wrap}
+    .stage-box{flex:1;min-width:160px;background:rgba(0,0,0,0.02);padding:8px;border-radius:10px;font-size:13px}
+
+    .controls .hint{font-size:13px;color:var(--muted)}
+
+    /* Progress section */
+    .progress-container {margin: 20px 0;}
+    .progress-bar {height: 20px; background-color: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden;}
+    .progress {height: 100%; background: linear-gradient(90deg, var(--accent), var(--primary)); border-radius: 10px; transition: width 0.5s ease;}
+    .progress-text {display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px;}
+
+    /* Stats section */
+    .stats {display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px;}
+    .stat-card {text-align: center; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.02);}
+    .stat-number {font-size: 1.5rem; font-weight: bold; color: var(--accent);}
+    .stat-label {font-size: 0.8rem; color: var(--muted); margin-top: 5px;}
+
+    /* small flourish */
+    .sparkle{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:14px;background:linear-gradient(90deg,var(--accent),#06b6d4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;box-shadow:0 8px 30px rgba(12,7,50,0.12); cursor: pointer; transition: all 0.3s ease; z-index: 100;}
+    .sparkle:hover {transform: scale(1.1) rotate(10deg);}
+
+    /* simple fadeIn for popup */
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Celebration animation */
+    @keyframes celebrate {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .celebrate {animation: celebrate 0.5s ease;}
+
+    /* Daily tip popup */
+    .daily-tip {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, var(--accent), var(--primary));
+      color: white;
+      padding: 18px 24px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      font-size: 14px;
+      animation: fadeIn 0.4s ease;
+      z-index: 1000;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    /* Flash effect */
+    .flash {
+      position: fixed;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(80,200,120,0.8);
+      box-shadow: 0 0 22px rgba(80,200,120,0.9);
+      transition: all 0.4s ease;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* Phase completion badge */
+    .phase-badge {
+      display: inline-block;
+      background: var(--success);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    /* Calendar header */
+    .calendar-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .day-header {
+      text-align: center;
+      font-weight: bold;
+      padding: 8px;
+      background-color: var(--primary);
+      color: white;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <header>
+      <div>
+        <h1>تقويم إيقاف استخدام <strong>اكرتين</strong> تدريجيًا <i class="fas fa-calendar-alt"></i></h1>
+        <div class="save-indicator" id="saveIndicator">جاري الحفظ تلقائيًا</div>
+      </div>
+
+      <div class="controls">
+        <label class="switch" title="الوضع الليلي">
+          <input type="checkbox" id="themeToggle">
+          <span class="toggle"></span>
+          <span class="hint">الوضع الليلي</span>
+        </label>
+        <button class="btn" id="resetBtn"><i class="fas fa-redo"></i> إعادة ضبط</button>
+      </div>
+    </header>
+
+    <div class="progress-container">
+      <div class="progress-bar">
+        <div class="progress" id="progressBar"></div>
+      </div>
+      <div class="progress-text">
+        <span>التقدم: <span id="progressPercent">0%</span></span>
+        <span id="completedDays">0 / 70 يوم مكتمل</span>
+      </div>
+    </div>
+
+    <main class="grid">
+      <section>
+        <div class="card">
+          <div class="phase-title">الخطة الكاملة - تبدأ من الاثنين 11 نوفمبر 2025</div>
+          <div class="legend" aria-hidden>
+            <span><i class="dot on"></i> يوم الاستخدام</span>
+            <span><i class="dot off"></i> يوم راحة</span>
+            <span><i class="dot done"></i> يوم منتهي</span>
+          </div>
+
+          <!-- Phases will be injected here -->
+          <div id="phasesContainer"></div>
+
+          <div class="stats">
+            <div class="stat-card">
+              <div class="stat-number" id="totalDays">0</div>
+              <div class="stat-label">إجمالي الأيام</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="completedCount">0</div>
+              <div class="stat-label">أيام مكتملة</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="remainingDays">70</div>
+              <div class="stat-label">أيام متبقية</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="completionRate">0%</div>
+              <div class="stat-label">معدل الإنجاز</div>
+            </div>
+          </div>
+
+          <div class="footer">افتحي هذا الملف من GitHub Pages وسيبقى تقدمك محفوظًا في هاتفك (localStorage)</div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="card tips">
+          <h3><i class="fas fa-lightbulb"></i> نصائح يومية</h3>
+          <ul>
+            <li>استخدمي مرطبًا سميكًا ومناسبًا للبشرة الحساسه صباحًا ومساءً.</li>
+            <li>لا تخرجي دون واقي شمس SPF 50 في النهار.</li>
+            <li>تجنبي منتجات تقشير البشرة أو الفرك خلال الأسابيع الأولى.</li>
+            <li>استخدمي ماء بارد أو فاتر عند غسل الوجه لتهدئة الاحمرار.</li>
+            <li>احفظي مذكرات قصيرة عن أي تهيج — يساعد الطبيب لاحقًا.</li>
+            <li>اشربي كمية كافية من الماء يومياً لترطيب البشرة من الداخل.</li>
+          </ul>
+          <hr style="margin:12px 0;border:none;border-top:1px solid rgba(0,0,0,0.04)">
+          <div class="stage-row">
+            <div class="stage-box">المرحلة 1: يوم / يوم — 4 أسابيع</div>
+            <div class="stage-box">المرحلة 2: يومين في الأسبوع — 3 أسابيع</div>
+            <div class="stage-box">المرحلة 3: يوم واحد في الأسبوع — 3 أسابيع</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h3><i class="fas fa-info-circle"></i> إرشادات سريعة</h3>
+          <ol style="padding-inline-start:18px;color:var(--muted)">
+            <li>اضغطي على أي خلية لشطب/إلغاء شطب اليوم.</li>
+            <li>الأيام المشار إليها "أستخدمه" هي الأيام التي يُنصح فيها بالتطبيق.</li>
+            <li>يمكنك إعادة ضبط الخطة بالزر أعلاه.</li>
+            <li>استخدمي الوضع الليلي لتخفيف إجهاد العينين.</li>
+          </ol>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h3><i class="fas fa-award"></i> إنجازاتك</h3>
+          <div id="achievements">
+            <p>استمري في التقدم لفتح الإنجازات!</p>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <div class="sparkle" role="button" aria-label="نصائح سريعة">✨</div>
+  </div>
+
+  <script>
+    (function(){
+      const app = document.getElementById('app');
+      const phasesContainer = document.getElementById('phasesContainer');
+      const themeToggle = document.getElementById('themeToggle');
+      const resetBtn = document.getElementById('resetBtn');
+      const saveIndicator = document.getElementById('saveIndicator');
+      const progressBar = document.getElementById('progressBar');
+      const progressPercent = document.getElementById('progressPercent');
+      const completedDays = document.getElementById('completedDays');
+      const totalDaysEl = document.getElementById('totalDays');
+      const completedCountEl = document.getElementById('completedCount');
+      const remainingDaysEl = document.getElementById('remainingDays');
+      const completionRateEl = document.getElementById('completionRate');
+      const achievementsEl = document.getElementById('achievements');
+
+      // Plan definition
+      const plan = [
+        { title: 'المرحلة 1: يوم أستخدمه ويوم لا', weeks:4, pattern: [1,0] },
+        { title: 'المرحلة 2: يومين في الأسبوع (الأحد + الأربعاء)', weeks:3, pattern: [1,0,0,1,0,0,0] },
+        { title: 'المرحلة 3: يوم واحد في الأسبوع', weeks:3, pattern: [1,0,0,0,0,0,0] }
+      ];
+
+      // Load saved state
+      const saved = JSON.parse(localStorage.getItem('tretState') || '{}');
+      const checked = saved.checked || {}; // keys like phaseIndex_idx
+      const theme = saved.theme || 'light';
+
+      // Apply theme
+      function applyTheme(t){
+        if(t === 'dark') document.documentElement.setAttribute('data-theme','dark');
+        else document.documentElement.removeAttribute('data-theme');
+        themeToggle.checked = (t === 'dark');
+      }
+      applyTheme(theme);
+
+      // Generate dates starting from Monday, November 11, 2025
+      function generateDates(startDate, totalDays) {
+        const dates = [];
+        const currentDate = new Date(startDate);
+        
+        for (let i = 0; i < totalDays; i++) {
+          const date = new Date(currentDate);
+          dates.push(date);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        return dates;
+      }
+
+      // Format date to display
+      function formatDate(date) {
+        const dayNames = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+        const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+        
+        const dayName = dayNames[date.getDay()];
+        const day = date.getDate();
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+        
+        return {
+          dayName: dayName,
+          fullDate: `${day} ${month} ${year}`
+        };
+      }
+
+      // Build UI
+      function build(){
+        phasesContainer.innerHTML = '';
+        
+        // Start date: Monday, November 11, 2025
+        const startDate = new Date(2025, 10, 11); // Note: months are 0-indexed (10 = November)
+        
+        // Calculate total days in all phases
+        let totalDaysInPlan = 0;
+        plan.forEach(phase => {
+          totalDaysInPlan += phase.weeks * 7;
+        });
+        
+        // Generate all dates for the entire plan
+        const allDates = generateDates(startDate, totalDaysInPlan);
+        let dateIndex = 0;
+        
+        plan.forEach((phase, pIndex) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'card';
+          wrapper.style.marginBottom = '12px';
+
+          const title = document.createElement('div');
+          title.className = 'phase-title';
+          title.textContent = phase.title + ' — ' + phase.weeks + ' أسابيع';
+          wrapper.appendChild(title);
+
+          // Create calendar header
+          const header = document.createElement('div');
+          header.className = 'calendar-header';
+          const dayNames = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"];
+          
+          dayNames.forEach(dayName => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'day-header';
+            dayHeader.textContent = dayName;
+            header.appendChild(dayHeader);
+          });
+          
+          wrapper.appendChild(header);
+
+          const cal = document.createElement('div');
+          cal.className = 'calendar';
+
+          const totalDays = phase.weeks * 7;
+          let phaseCompleted = 0;
+          let phaseTotal = 0;
+          
+          for(let i=0;i<totalDays;i++){
+            const cell = document.createElement('div');
+            const key = pIndex + '-' + i;
+            const shouldUse = !!phase.pattern[i % phase.pattern.length];
+            cell.className = 'day ' + (shouldUse ? 'on':'off');
+            if(checked[key]) {
+              cell.classList.add('checked');
+              if(shouldUse) phaseCompleted++;
+            }
+            
+            if(shouldUse) phaseTotal++;
+
+            // Get date for this day
+            const currentDate = allDates[dateIndex];
+            const formattedDate = formatDate(currentDate);
+            dateIndex++;
+
+            // day index label
+            const idx = document.createElement('div'); 
+            idx.className='day-index'; 
+            idx.textContent = (i+1);
+            cell.appendChild(idx);
+
+            const main = document.createElement('div'); 
+            main.textContent = shouldUse ? 'أستخدمه' : 'راحة';
+            cell.appendChild(main);
+            
+            const sub = document.createElement('small'); 
+            sub.textContent = formattedDate.dayName + ' - ' + formattedDate.fullDate;
+            cell.appendChild(sub);
+
+            cell.onclick = () => {
+              if(shouldUse) {
+                checked[key] = !checked[key];
+                if(checked[key]) {
+                  cell.classList.add('checked');
+                  createFlashEffect(event);
+                  checkPhaseCompletion(pIndex);
+                } else {
+                  cell.classList.remove('checked');
+                }
+                saveState();
+                updateProgress();
+              }
+            };
+
+            cal.appendChild(cell);
+          }
+
+          // Add phase completion badge if completed
+          if(phaseCompleted > 0 && phaseCompleted === phaseTotal) {
+            const badge = document.createElement('span');
+            badge.className = 'phase-badge';
+            badge.innerHTML = '<i class="fas fa-check"></i> مكتملة';
+            title.appendChild(badge);
+          }
+
+          wrapper.appendChild(cal);
+          phasesContainer.appendChild(wrapper);
+        });
+        
+        updateProgress();
+        updateAchievements();
+      }
+
+      // Update progress
+      function updateProgress() {
+        let totalUseDays = 0;
+        let completedUseDays = 0;
+        
+        plan.forEach((phase, pIndex) => {
+          const totalDays = phase.weeks * 7;
+          for(let i=0;i<totalDays;i++){
+            const key = pIndex + '-' + i;
+            const shouldUse = !!phase.pattern[i % phase.pattern.length];
+            if(shouldUse) {
+              totalUseDays++;
+              if(checked[key]) completedUseDays++;
+            }
+          }
+        });
+        
+        const progress = totalUseDays > 0 ? Math.round((completedUseDays / totalUseDays) * 100) : 0;
+        
+        progressBar.style.width = `${progress}%`;
+        progressPercent.textContent = `${progress}%`;
+        completedDays.textContent = `${completedUseDays} / ${totalUseDays} يوم مكتمل`;
+        
+        totalDaysEl.textContent = totalUseDays;
+        completedCountEl.textContent = completedUseDays;
+        remainingDaysEl.textContent = totalUseDays - completedUseDays;
+        completionRateEl.textContent = `${progress}%`;
+      }
+
+      // Check if a phase is completed
+      function checkPhaseCompletion(phaseIndex) {
+        const phase = plan[phaseIndex];
+        const totalDays = phase.weeks * 7;
+        let completed = 0;
+        let totalUseDays = 0;
+        
+        for(let i=0;i<totalDays;i++){
+          const key = phaseIndex + '-' + i;
+          const shouldUse = !!phase.pattern[i % phase.pattern.length];
+          if(shouldUse) {
+            totalUseDays++;
+            if(checked[key]) completed++;
+          }
+        }
+        
+        if(completed === totalUseDays) {
+          // Phase completed!
+          showCelebration(`مبروك! أكملت المرحلة ${phaseIndex + 1}`);
+          updateAchievements();
+        }
+      }
+
+      // Update achievements
+      function updateAchievements() {
+        let completedPhases = 0;
+        
+        plan.forEach((phase, pIndex) => {
+          const totalDays = phase.weeks * 7;
+          let completed = 0;
+          let totalUseDays = 0;
+          
+          for(let i=0;i<totalDays;i++){
+            const key = pIndex + '-' + i;
+            const shouldUse = !!phase.pattern[i % phase.pattern.length];
+            if(shouldUse) {
+              totalUseDays++;
+              if(checked[key]) completed++;
+            }
+          }
+          
+          if(completed === totalUseDays) completedPhases++;
+        });
+        
+        const totalUseDays = parseInt(totalDaysEl.textContent);
+        const completedUseDays = parseInt(completedCountEl.textContent);
+        
+        let achievementsHTML = '';
+        
+        if(completedPhases >= 1) {
+          achievementsHTML += '<p><i class="fas fa-star" style="color: gold;"></i> أكملت مرحلة واحدة على الأقل!</p>';
+        }
+        
+        if(completedPhases >= 2) {
+          achievementsHTML += '<p><i class="fas fa-trophy" style="color: #ffd700;"></i> أكملت أكثر من مرحلة!</p>';
+        }
+        
+        if(completedPhases === 3) {
+          achievementsHTML += '<p><i class="fas fa-crown" style="color: #ffd700;"></i> مبروك! أكملت جميع المراحل!</p>';
+        }
+        
+        if(completedUseDays >= 10) {
+          achievementsHTML += '<p><i class="fas fa-fire" style="color: orange;"></i> 10 أيام مكتملة! استمراريتك رائعة!</p>';
+        }
+        
+        if(completedUseDays >= 30) {
+          achievementsHTML += '<p><i class="fas fa-gem" style="color: #8b5cf6;"></i> 30 يومًا مكتمل! أنتِ مثال للالتزام!</p>';
+        }
+        
+        if(achievementsHTML === '') {
+          achievementsHTML = '<p>استمري في التقدم لفتح الإنجازات!</p>';
+        }
+        
+        achievementsEl.innerHTML = achievementsHTML;
+      }
+
+      // Create flash effect
+      function createFlashEffect(event) {
+        const flash = document.createElement('div');
+        flash.className = 'flash';
+        flash.style.left = event.clientX + 'px';
+        flash.style.top = event.clientY + 'px';
+        document.body.appendChild(flash);
+        
+        setTimeout(() => {
+          flash.style.transform = 'scale(8)';
+          flash.style.opacity = '0';
+        }, 10);
+        
+        setTimeout(() => {
+          if (flash.parentNode) {
+            flash.parentNode.removeChild(flash);
+          }
+        }, 450);
+      }
+
+      // Show celebration message
+      function showCelebration(message) {
+        const celebration = document.createElement('div');
+        celebration.className = 'daily-tip celebrate';
+        celebration.textContent = message;
+        document.body.appendChild(celebration);
+        
+        setTimeout(() => {
+          celebration.style.opacity = '0';
+          celebration.style.transition = 'opacity 0.5s';
+          setTimeout(() => {
+            if (celebration.parentNode) {
+              celebration.parentNode.removeChild(celebration);
+            }
+          }, 500);
+        }, 3000);
+      }
+
+      // Save state
+      let savePending = false;
+      function saveState(){
+        savePending = true;
+        saveIndicator.textContent = 'جاري الحفظ...';
+        localStorage.setItem('tretState', JSON.stringify({
+          checked, 
+          theme: themeToggle.checked ? 'dark':'light', 
+          savedAt: new Date().toISOString()
+        }));
+        setTimeout(()=>{ 
+          savePending=false; 
+          saveIndicator.textContent = 'محفوظ تلقائياً'; 
+        }, 300);
+      }
+
+      // Reset
+      resetBtn.addEventListener('click', ()=>{
+        if(confirm('هل تريدين إعادة ضبط كل الشطب وإرجاع الخطة لحالتها الأصلية؟')){
+          for(const k in checked) delete checked[k];
+          saveState(); 
+          build();
+        }
+      });
+
+      // Theme toggle
+      themeToggle.addEventListener('change', ()=>{
+        const t = themeToggle.checked ? 'dark':'light';
+        applyTheme(t);
+        saveState();
+      });
+
+      // Initial build
+      build();
+
+      // Daily tip popup
+      window.addEventListener('load', () => {
+        const lastShown = localStorage.getItem('dailyPopup');
+        const today = new Date().toDateString();
+        if (lastShown !== today) {
+          showDailyPopup();
+          localStorage.setItem('dailyPopup', today);
+        }
+      });
+
+      function showDailyPopup(){
+        const tips = [
+          '✨ تذكير اليوم: اشربي ماء كفاية واعملي راحة لبشرتك 🌿',
+          '💧 لا تنسي وضع المرطب بعد غسل وجهك مباشرة!',
+          '☀️ واقي الشمس ضروري حتى في الأيام الملبدة بالغيوم',
+          '🌙 النوم الكافي يساعد بشرتك على التجدد خلال الليل',
+          '🍎 تناولي الفواكه والخضروات الغنية بمضادات الأكسدة'
+        ];
+        const randomTip = tips[Math.floor(Math.random() * tips.length)];
+        
+        const box = document.createElement('div');
+        box.className = 'daily-tip';
+        box.textContent = randomTip;
+
+        document.body.appendChild(box);
+        setTimeout(()=>{
+          box.style.opacity='0';
+          box.style.transition='opacity .5s';
+          setTimeout(()=> box.remove(), 600);
+        }, 4500);
+      }
+
+      // Sparkle button for quick tips
+      const sparkleBtn = document.querySelector('.sparkle');
+      if(sparkleBtn){
+        sparkleBtn.onclick = ()=>{
+          const tips = [
+            'استخدمي مرطب لطيف بعد الغسول بـ 3 دقائق فقط! 💧',
+            'نامي 7-8 ساعات… بشرتك تشكرك 🌙',
+            'استخدمي مناديل ناعمة بدلًا من الفوط الخشنة ✨',
+            'خففي من القهوة اليوم… البشرة تحب الترطيب! ☕➡️💦',
+            'استخدمي واقي الشمس حتى لو كنتِ داخل البيت ☀️',
+            'جربي تقنية الوجه الماسكي لترطيب إضافي 🎭'
+          ];
+          const msg = tips[Math.floor(Math.random()*tips.length)];
+          showCelebration('💡 نصيحة سريعة: ' + msg);
+        };
+      }
+
+      // Autosave
+      setInterval(()=>{ if(savePending) saveState(); },5000);
+
+    })();
+  </script>
+</body>
+</html>
